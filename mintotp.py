@@ -19,6 +19,7 @@ import base64
 import hmac
 import os
 import struct
+import sys
 import time
 
 
@@ -39,16 +40,51 @@ def totp(key, time_step=30, digits=6, digest='sha1'):
     return hotp(key, int(time.time() / time_step), digits, digest)
 
 def write_clipboard(text: str):
-    os.system("cmd /c echo " + text + "| clip")
+    platform = check_os()
+    is_pastable = False
+    if platform == "Windows":
+        os.system("cmd /c echo " + text + "| clip")
+        is_pastable = True
+    elif platform in ("Linux", "MacOS"):
+        os.system('echo "' + text + '" | pbcopy')
+        is_pastable = True
+    return is_pastable
 
 def wait(seconds: int):
-    os.system(f'cmd /c echo "Hold on, and wait {seconds} seconds!"'
-              u' && timeout /T 3 /NOBREAK')
+    platform = check_os()
+    if platform == "Windows":
+        os.system(
+            'cmd /c echo "Hold on, and wait {} seconds!"'.format(seconds)
+            + ' && timeout /T {} /NOBREAK'.format(seconds)
+        )
+    elif platform in ("Linux", "MacOS"):
+        os.system(
+            'echo "Hold on, and wait {} seconds!"'.format(seconds)
+            + ' && sleep {}s'.format(seconds)
+        )
+    else:
+        print("Hold on, and wait {} seconds!".format(seconds))
+        time.sleep(3)
+
+def check_os():
+    platform = sys.platform.lower()
+    if platform.startswith("linux"):
+        return "Linux"
+    elif platform.startswith("darwin"):
+        return "MacOS"
+    elif platform.startswith("win"):
+        return "Windows"
+    else:
+        return "Unknown"
+
 
 def Main():
     key = base64.decodebytes(KEY.encode('utf8')).decode('utf8')
     token = totp(key)
+    print("The token is: {}".format(token))
+
     write_clipboard(token)
+    print("Now you can paste it anywhere.")
     return token
 
 
