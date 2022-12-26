@@ -6,7 +6,9 @@ Usage:
 
 ```python
 import base64
-base64.encodebytes('your_token_here'.encode('utf8'))
+key = base64.encodebytes('your_token_here'.encode('utf8'))
+with open('.secret', 'w') as f:
+    f.write(key.decode('utf8'))
 ```
 
 Copy the above outputs to `.secret`

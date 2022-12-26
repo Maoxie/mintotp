@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# -*- coding=utf-8 -*-
 """
 Usage:
 
@@ -23,9 +24,9 @@ import time
 from pathlib import Path
 
 
-def hotp(key, counter, digits=6, digest='sha1') -> str:
-    key = base64.b32decode(key.upper() + '=' * ((8 - len(key)) % 8))
-    # key = base64.b64decode(key.upper() + '=' * ((8 - len(key)) % 8))
+def hotp(key: str, counter, digits=6, digest='sha1') -> str:
+    key = key.upper() + '=' * ((8 - len(key)) % 8)
+    key = base64.b32decode(key.encode('utf8'))
     counter = struct.pack('>Q', counter)
     mac = hmac.new(key, counter, digest).digest()
     offset = mac[-1] & 0x0f
@@ -33,7 +34,7 @@ def hotp(key, counter, digits=6, digest='sha1') -> str:
     return str(binary)[-digits:].rjust(digits, '0')
 
 
-def totp(key, time_step=30, digits=6, digest='sha1', verbose=True) -> str:
+def totp(key: str, time_step=30, digits=6, digest='sha1', verbose=True) -> str:
     epoch = int(time.time() % time_step)
     if time_step - epoch <= 3:
         wait(time_step - epoch, verbose)
@@ -94,7 +95,8 @@ def check_os():
 
 def main(verbose=True) -> str:
     with Path(__file__).with_name(".secret").open("r") as f:
-        key = f.readline()
+        line = f.readline()
+        key = base64.decodebytes(line.encode('utf8')).decode('utf8')
     token = totp(key, verbose=verbose)
     if verbose:
         print("The token is: {}".format(token))
