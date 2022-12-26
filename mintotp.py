@@ -22,8 +22,9 @@ import sys
 import time
 
 
-def hotp(key, counter, digits=6, digest='sha1'):
-    key = base64.b32decode(key.upper() + '=' * ((8 - len(key)) % 8))
+def hotp(key, counter, digits=6, digest='sha1') -> str:
+    # key = base64.b32decode(key.upper() + '=' * ((8 - len(key)) % 8))
+    key = base64.b64decode(key.upper() + '=' * ((8 - len(key)) % 8))
     counter = struct.pack('>Q', counter)
     mac = hmac.new(key, counter, digest).digest()
     offset = mac[-1] & 0x0f
@@ -31,7 +32,7 @@ def hotp(key, counter, digits=6, digest='sha1'):
     return str(binary)[-digits:].rjust(digits, '0')
 
 
-def totp(key, time_step=30, digits=6, digest='sha1', verbose=True):
+def totp(key, time_step=30, digits=6, digest='sha1', verbose=True) -> str:
     epoch = int(time.time() % time_step)
     if time_step - epoch <= 3:
         wait(time_step - epoch, verbose)
@@ -91,11 +92,10 @@ def check_os():
 
 
 
-def main(verbose=True):
-    key = os.environ.get("TOTP_KEY", "")
-    if not key:
-        raise KeyError("Please set envvar: `TOTP_KEY`")
-    token = totp(key, verbose)
+def main(verbose=True) -> str:
+    with open(".secret", "r") as f:
+        key = f.readline()
+    token = totp(key, verbose=verbose)
     if verbose:
         print("The token is: {}".format(token))
 
@@ -112,5 +112,6 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--verbose", action="store_true")
 
     args = parser.parse_args()
-
-    main(args.verbose)
+    token = main(args.verbose)
+    if not args.verbose:
+        print(token + "\n")
