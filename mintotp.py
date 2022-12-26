@@ -20,11 +20,12 @@ import os
 import struct
 import sys
 import time
+from pathlib import Path
 
 
 def hotp(key, counter, digits=6, digest='sha1') -> str:
-    # key = base64.b32decode(key.upper() + '=' * ((8 - len(key)) % 8))
-    key = base64.b64decode(key.upper() + '=' * ((8 - len(key)) % 8))
+    key = base64.b32decode(key.upper() + '=' * ((8 - len(key)) % 8))
+    # key = base64.b64decode(key.upper() + '=' * ((8 - len(key)) % 8))
     counter = struct.pack('>Q', counter)
     mac = hmac.new(key, counter, digest).digest()
     offset = mac[-1] & 0x0f
@@ -91,9 +92,8 @@ def check_os():
         return "Unknown"
 
 
-
 def main(verbose=True) -> str:
-    with open(".secret", "r") as f:
+    with Path(__file__).with_name(".secret").open("r") as f:
         key = f.readline()
     token = totp(key, verbose=verbose)
     if verbose:
@@ -114,4 +114,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     token = main(args.verbose)
     if not args.verbose:
-        print(token + "\n")
+        print(token)
