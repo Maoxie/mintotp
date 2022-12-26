@@ -23,7 +23,7 @@ import sys
 import time
 
 
-KEY = 'PUT_YOUR_BASE64_ENCODED_TOKEN_HERE\n'    # include a tailing '\n'
+KEY = 'TzUyVzQ1VEpHNVZHNk1ET1BGVVRTWkJZ\n'    # include a tailing '\n'
 
 def hotp(key, counter, digits=6, digest='sha1'):
     key = base64.b32decode(key.upper() + '=' * ((8 - len(key)) % 8))
@@ -33,10 +33,10 @@ def hotp(key, counter, digits=6, digest='sha1'):
     binary = struct.unpack('>L', mac[offset:offset+4])[0] & 0x7fffffff
     return str(binary)[-digits:].rjust(digits, '0')
 
-def totp(key, time_step=30, digits=6, digest='sha1'):
+def totp(key, time_step=30, digits=6, digest='sha1', verbose=True):
     epoch = int(time.time() % time_step)
     if time_step - epoch <= 3:
-        wait(time_step - epoch)
+        wait(time_step - epoch, verbose)
     return hotp(key, int(time.time() / time_step), digits, digest)
 
 def write_clipboard(text: str):
@@ -50,20 +50,31 @@ def write_clipboard(text: str):
         is_pastable = True
     return is_pastable
 
-def wait(seconds: int):
+def wait(seconds: int, verbose=True):
     platform = check_os()
     if platform == "Windows":
-        os.system(
-            'cmd /c echo "Hold on, and wait {} seconds!"'.format(seconds)
-            + ' && timeout /T {} /NOBREAK'.format(seconds)
-        )
+        if verbose:
+            os.system(
+                'cmd /c echo "Hold on, and wait {} seconds!"'.format(seconds)
+                + ' && timeout /T {} /NOBREAK'.format(seconds)
+            )
+        else:
+            os.system(
+                'cmd /c timeout /T {} /NOBREAK'.format(seconds)
+            )
     elif platform in ("Linux", "MacOS"):
-        os.system(
-            'echo "Hold on, and wait {} seconds!"'.format(seconds)
-            + ' && sleep {}s'.format(seconds)
-        )
+        if verbose:
+            os.system(
+                'echo "Hold on, and wait {} seconds!"'.format(seconds)
+                + ' && sleep {}'.format(seconds)
+            )
+        else:
+            os.system(
+                'sleep {}'.format(seconds)
+            )
     else:
-        print("Hold on, and wait {} seconds!".format(seconds))
+        if verbose:
+            print("Hold on, and wait {} seconds!".format(seconds))
         time.sleep(3)
 
 def check_os():
@@ -78,15 +89,24 @@ def check_os():
         return "Unknown"
 
 
-def Main():
+def Main(verbose=True):
     key = base64.decodebytes(KEY.encode('utf8')).decode('utf8')
-    token = totp(key)
-    print("The token is: {}".format(token))
+    token = totp(key, verbose)
+    if verbose:
+        print("The token is: {}".format(token))
 
     write_clipboard(token)
-    print("Now you can paste it anywhere.")
+    if verbose:
+        print("Now you can paste it anywhere.")
     return token
 
 
 if __name__ == '__main__':
-    Main()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--verbose", action="store_true")
+
+    args = parser.parse_args()
+
+    Main(args.verbose)
