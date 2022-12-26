@@ -2,10 +2,9 @@
 """
 Usage:
 
-1. Set the `KEY`
+1. Set your token:
 ```python
-import base64
-base64.encodebytes('copy_the_token_here'.encode('utf8'))
+echo your_token_here | python3 -m base64 -e > .secret
 ```
 
 2. Run this script. Then the MF2 token will be set to the clipboard
@@ -13,7 +12,7 @@ base64.encodebytes('copy_the_token_here'.encode('utf8'))
 python mintotp.py
 ```
 
-3. Now just paste the token!
+3. Now just paste the digits!
 """
 import base64
 import hmac
@@ -23,8 +22,6 @@ import sys
 import time
 
 
-KEY = 'TzUyVzQ1VEpHNVZHNk1ET1BGVVRTWkJZ\n'    # include a tailing '\n'
-
 def hotp(key, counter, digits=6, digest='sha1'):
     key = base64.b32decode(key.upper() + '=' * ((8 - len(key)) % 8))
     counter = struct.pack('>Q', counter)
@@ -33,11 +30,13 @@ def hotp(key, counter, digits=6, digest='sha1'):
     binary = struct.unpack('>L', mac[offset:offset+4])[0] & 0x7fffffff
     return str(binary)[-digits:].rjust(digits, '0')
 
+
 def totp(key, time_step=30, digits=6, digest='sha1', verbose=True):
     epoch = int(time.time() % time_step)
     if time_step - epoch <= 3:
         wait(time_step - epoch, verbose)
     return hotp(key, int(time.time() / time_step), digits, digest)
+
 
 def write_clipboard(text: str):
     platform = check_os()
@@ -49,6 +48,7 @@ def write_clipboard(text: str):
         os.system('echo "' + text + '" | pbcopy')
         is_pastable = True
     return is_pastable
+
 
 def wait(seconds: int, verbose=True):
     platform = check_os()
@@ -77,6 +77,7 @@ def wait(seconds: int, verbose=True):
             print("Hold on, and wait {} seconds!".format(seconds))
         time.sleep(3)
 
+
 def check_os():
     platform = sys.platform.lower()
     if platform.startswith("linux"):
@@ -89,8 +90,11 @@ def check_os():
         return "Unknown"
 
 
-def Main(verbose=True):
-    key = base64.decodebytes(KEY.encode('utf8')).decode('utf8')
+
+def main(verbose=True):
+    key = os.environ.get("TOTP_KEY", "")
+    if not key:
+        raise KeyError("Please set envvar: `TOTP_KEY`")
     token = totp(key, verbose)
     if verbose:
         print("The token is: {}".format(token))
@@ -109,4 +113,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    Main(args.verbose)
+    main(args.verbose)
