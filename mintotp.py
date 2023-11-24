@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/env python3
 # -*- coding=utf-8 -*-
 """
 Usage:
@@ -24,17 +24,17 @@ import time
 from pathlib import Path
 
 
-def hotp(key: str, counter, digits=6, digest='sha1') -> str:
-    key = key.upper() + '=' * ((8 - len(key)) % 8)
-    key = base64.b32decode(key.encode('utf8'))
-    counter = struct.pack('>Q', counter)
+def hotp(key: str, counter, digits=6, digest="sha1") -> str:
+    key = key.upper() + "=" * ((8 - len(key)) % 8)
+    key = base64.b32decode(key.encode("utf8"))
+    counter = struct.pack(">Q", counter)
     mac = hmac.new(key, counter, digest).digest()
-    offset = mac[-1] & 0x0f
-    binary = struct.unpack('>L', mac[offset:offset+4])[0] & 0x7fffffff
-    return str(binary)[-digits:].rjust(digits, '0')
+    offset = mac[-1] & 0x0F
+    binary = struct.unpack(">L", mac[offset : offset + 4])[0] & 0x7FFFFFFF
+    return str(binary)[-digits:].rjust(digits, "0")
 
 
-def totp(key: str, time_step=30, digits=6, digest='sha1', verbose=True) -> str:
+def totp(key: str, time_step=30, digits=6, digest="sha1", verbose=True) -> str:
     epoch = int(time.time() % time_step)
     if time_step - epoch <= 3:
         wait(time_step - epoch, verbose)
@@ -59,22 +59,18 @@ def wait(seconds: int, verbose=True):
         if verbose:
             os.system(
                 'cmd /c echo "Hold on, and wait {} seconds!"'.format(seconds)
-                + ' && timeout /T {} /NOBREAK'.format(seconds)
+                + " && timeout /T {} /NOBREAK".format(seconds)
             )
         else:
-            os.system(
-                'cmd /c timeout /T {} /NOBREAK'.format(seconds)
-            )
+            os.system("cmd /c timeout /T {} /NOBREAK".format(seconds))
     elif platform in ("Linux", "MacOS"):
         if verbose:
             os.system(
                 'echo "Hold on, and wait {} seconds!"'.format(seconds)
-                + ' && sleep {}'.format(seconds)
+                + " && sleep {}".format(seconds)
             )
         else:
-            os.system(
-                'sleep {}'.format(seconds)
-            )
+            os.system("sleep {}".format(seconds))
     else:
         if verbose:
             print("Hold on, and wait {} seconds!".format(seconds))
@@ -97,7 +93,7 @@ def main(verbose=True) -> str:
     with Path(__file__).with_name(".secret").open("r") as f:
         line = f.readline().strip()
         # print(f"{line=}")
-        key = base64.decodebytes(line.encode("utf-8")).decode('utf8').strip()
+        key = base64.decodebytes(line.encode("utf-8")).decode("utf8").strip()
         # print(f"{key=}")
     token = totp(key, verbose=verbose)
     if verbose:
@@ -109,7 +105,7 @@ def main(verbose=True) -> str:
     return token
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
