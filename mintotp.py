@@ -95,8 +95,10 @@ def check_os():
 
 def main(verbose=True) -> str:
     with Path(__file__).with_name(".secret").open("r") as f:
-        line = f.readline()
-        key = base64.decodebytes(line.encode('utf8')).decode('utf8')
+        line = f.readline().strip()
+        # print(f"{line=}")
+        key = base64.decodebytes(line.encode("utf-8")).decode('utf8').strip()
+        # print(f"{key=}")
     token = totp(key, verbose=verbose)
     if verbose:
         print("The token is: {}".format(token))
