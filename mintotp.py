@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding=utf-8 -*-
 """
+Author: YANG Zhitao
+
 Usage:
 
 1. Set your token:
-```python
+
+```bash
 echo your_token_here | python3 -m base64 -e > .secret
 ```
 
 2. Run this script. Then the MF2 token will be set to the clipboard
+
 ```python
 python mintotp.py
 ```
@@ -90,11 +94,25 @@ def check_os():
 
 
 def main(verbose=True) -> str:
+    secret_file = Path(__file__).with_name(".secret")
+    if not secret_file.exists():
+        print("No token found.")
+        print("Please following `README.md` to set your token first.")
+        print()
+        input("Press Any Key to exit...")
+        sys.exit(1)
+
     with Path(__file__).with_name(".secret").open("r") as f:
         line = f.readline().strip()
-        # print(f"{line=}")
-        key = base64.decodebytes(line.encode("utf-8")).decode("utf8").strip()
-        # print(f"{key=}")
+        try:
+            key = base64.decodebytes(line.encode("utf-8")).decode("utf8").strip()
+        except Exception as e:
+            print("The token is invalid.")
+            print("Please following `README.md` to set your token again.")
+            print()
+            input("Press Any Key to exit...")
+            sys.exit(1)
+
     token = totp(key, verbose=verbose)
     if verbose:
         print("The token is: {}".format(token))
@@ -102,6 +120,7 @@ def main(verbose=True) -> str:
     write_clipboard(token)
     if verbose:
         print("Now you can paste it anywhere.")
+
     return token
 
 
@@ -112,6 +131,14 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--verbose", action="store_true")
 
     args = parser.parse_args()
-    token = main(args.verbose)
+    try:
+        token = main(args.verbose)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print()
+        input("Press Any Key to exit...")
+
+        sys.exit(1)
     if not args.verbose:
         print(token)
