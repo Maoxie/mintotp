@@ -116,11 +116,12 @@ def main(verbose=True) -> str:
     token = totp(key, verbose=verbose)
     if verbose:
         print("The token is: {}".format(token))
+    else:
+        print(token)
 
     write_clipboard(token)
     if verbose:
         print("Now you can paste it anywhere.")
-
     return token
 
 
@@ -138,7 +139,4 @@ if __name__ == "__main__":
         traceback.print_exc()
         print()
         input("Press Any Key to exit...")
-
         sys.exit(1)
-    if not args.verbose:
-        print(token)
